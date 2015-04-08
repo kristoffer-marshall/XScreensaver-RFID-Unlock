@@ -1,7 +1,4 @@
 #!/usr/bin/perl
-# CREATION DATE:    28Aug2013
-# REVISION DATE:    05Sep2013
-# REVISION:         v2.1
 # AUTHOR:           Kristoffer Marshall  (aka Kristoff)
 # WEBSITE:          http://www.hackingforkids.com
 # GOOGLE PLUS:     https://plus.google.com/118073020950935552634 
@@ -14,7 +11,9 @@
 #   * An RFID reader that outputs to USB
 #   * xscreensaver
 #   * Perl module Device::SerialPort
-#   * xdotool (yum install xdotool ... or whatever you're used to)
+#   * xdotool
+#   For Fedora/RHEL/CentOS users:
+#     yum install perl-Device-SerialPort xdotool xscreensaver
 #
 # NOTES:
 #   * Make sure the USB path is correct
