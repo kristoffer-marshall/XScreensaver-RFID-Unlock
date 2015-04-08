@@ -19,19 +19,24 @@
 # NOTES:
 #   * Make sure the USB path is correct
 #   * Make sure the baud, parity, and stop bits are correct
-#   * Replace "YOURPASSWORDHERE" below with your password.
+#   * Replace "password" below with your password.
 #   * If you're positive you have the correct start and stop bytes
 #       and never see them read, check your baud rate. 
+#   * Increase $LOCK_INTERVAL if you would like more time for the
+#     device to pull for your RFID tag. This is useful if your
+#     reader's output is getting to your computer slower. So if
+#     this script works most of the time but sometimes locks,
+#     try increasing this value. This is also useful if you want
+#     some more leeway before the computer locks or unlocks. Say
+#     you moved your RFID tag for a split second and want time to
+#     reposition it.
 #
 # TODO:
 #   * Automatically detect the correct USB port
 #   * Possibly have an encrypted password file, or some sort of key system
 #   * Automatically "learn" RFID tags to minimize setup
-#   * Play a sound when the screen is locked/unlocked
 #   * Accept command line flags
-#   X Use a string as the password
-#   X Trigger by a unique RFID tag, not just any RFID tag the reader can read
-#   X Automatically lock the screen when the RFID tag is not in range
+#   * Use a string as the password
 #
 # The serial values here should work with the following:
 # URL to Parallax USB RFID Card Reader (#28340): 
@@ -40,16 +45,17 @@
 use Device::SerialPort;
 
 # You can set the sound variables to blank if you don't want sound. Otherwise, modify them to point to directories with wave files.
-my $LOCK_SOUND = 'aplay -q `find ./lock/*.wav -type f | shuf -n 1`&';
-my $UNLOCK_SOUND = 'aplay -q `find ./unlock/*.wav -type f | shuf -n 1`&';
+my $LOCK_SOUND = 'aplay -q `find /home/YOURUSERNAME/sounds/lock/*.wav -type f | shuf -n 1`&';
+my $UNLOCK_SOUND = 'aplay -q `find /home/YOURUSERNAME/sounds/unlock/*.wav -type f | shuf -n 1`&';
 
 my $LOCK_COMMAND    = $LOCK_SOUND . ' xscreensaver-command --lock &> /dev/null';
-my $UNLOCK_COMMAND  = $UNLOCK_SOUND . ' xdotool type "$(printf "\YOURPASSWORDHERE\n")"; xdotool key KP_Enter';
+my $UNLOCK_COMMAND  = $UNLOCK_SOUND . ' xdotool type "$(printf "YOURPASSWORDHERE\n")"; xdotool key KP_Enter';
 
 my @TRUSTED_IDS      = ('0a3834312463454442', '0a3823435333338412'); # Unique IDs of your RFID cards
-my $LOCK_INTERVAL   = 280000; # Lock timeout in loop iterations
+my $LOCK_INTERVAL   = 500; # Lock timeout in loop iterations
 my $LOCK_MESSAGE = 'No trusted RFID tag detected. Locking screen.';
 my $UNLOCK_MESSAGE = 'Trusted RFID tag detected. Unlocking screen.';
+
 
 #######=- Unique to your RFID reader. Find the specs if you're unsure.
 my $port = Device::SerialPort->new("/dev/ttyUSB0"); # You will most likely need to change this
@@ -59,6 +65,11 @@ $port->databits(8);
 $port->baudrate(2400);
 $port->parity("none");
 $port->stopbits(1);
+
+# These may be tweaked per system. The program will work without them, but the system will
+# poll as fast as it can and CPU will be driven up significantly (like use a whole core).
+$port->read_char_time(0);
+$port->read_const_time(3); 
 #######=-
 
 
@@ -111,6 +122,8 @@ sub watchForTrustedID {
     while (1) {
         if($lockMode == 1){
             $counter++;
+
+            # Useful for tweaking the "count" value. It resets once the correct ID is read.
             #print "Count: $counter\n";
             if($counter > $LOCK_INTERVAL) {
                 return 1;
@@ -138,5 +151,4 @@ sub watchForTrustedID {
         }
     }
 }
-
 
